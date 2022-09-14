@@ -1,5 +1,6 @@
 package com.dmtryii.task.entities;
 
+import com.dmtryii.task.enums.Direction;
 import com.dmtryii.task.utils.Generator;
 
 import java.util.Arrays;
@@ -10,17 +11,19 @@ public class Dispatcher {
     private int currentFloor = 1;
     private boolean button; // up = true, down = false
     private static int floorQuantity;
-    private static int passQuantity;
-    private int peopleNeedUp = 0;
-    private int peopleNeedDown = 0;
+    private int passQuantity;
+    private int peopleNeedUp;
+    private int peopleNeedDown;
     private int freePlace;
     private int[] temp;
 
-    private final Generator random;
-    public Elevator elevator;
-    public Passenger passenger;
+    private Generator random;
+    private Elevator elevator;
+    private Passenger passenger;
 
-    public Dispatcher() {
+    public Dispatcher() {}
+
+    public void init() {
         random = new Generator();
         elevator = new Elevator();
         passenger = new Passenger();
@@ -71,12 +74,12 @@ public class Dispatcher {
                 System.out.printf("%3d", arr[i][j]);
             }
             System.out.print(" | ");
-            if (elevator.getState() == 1 && getCurrentFloor() == n) {
+            if (elevator.getDirection() == Direction.UP && getCurrentFloor() == n) {
                 System.out.print("^");
                 for (int b = 0; b < elevator.getMaxCapacity(); b++) {
                     System.out.printf("%3d", temp[b]);
                 }
-            } else if (elevator.getState() == -1 && getCurrentFloor() == n) {
+            } else if (elevator.getDirection() == Direction.DOWN && getCurrentFloor() == n) {
                 System.out.print("V");
                 for (int b = 0; b < elevator.getMaxCapacity(); b++) {
                     System.out.printf("%3d", temp[b]);
@@ -86,7 +89,7 @@ public class Dispatcher {
         }
     }
 
-    public static int getPeopleNeedUp(int floor) {
+    public int getPeopleNeedUp(int floor) {
         int needUp = 0;
         for (int j = 0; j < arr[floor - 1].length; j++) {
             if (arr[floor - 1][j] >= floor && arr[floor - 1][j] > 0) {
@@ -96,7 +99,7 @@ public class Dispatcher {
         return needUp;
     }
 
-    public static int getPeopleNeedDown(int floor) {
+    public int getPeopleNeedDown(int floor) {
         int needDown = 0;
         for (int j = 0; j < arr[floor - 1].length; j++) {
             if (arr[floor - 1][j] < floor && arr[floor - 1][j] > 0) {
@@ -108,13 +111,13 @@ public class Dispatcher {
 
     private void boarding() {
         if (getCurrentFloor() == 1) {
-            elevator.setState(1);
+            elevator.setDirection(Direction.UP);
         } else if (getCurrentFloor() == floorQuantity) {
-            elevator.setState(-1);
+            elevator.setDirection(Direction.DOWN);
         }
 
         if (passQuantity == 0) { // there are no people
-            elevator.setState(0);
+            elevator.setDirection(Direction.WAITING);
             System.out.println("\n ----Elevator is waiting now----\n");
             System.exit(1);
         } else if (passQuantity > 0) {
@@ -132,7 +135,9 @@ public class Dispatcher {
 
         getFreePlace();
 
-        if (peopleNeedUp > 0 && elevator.getState() == 1 || elevator.getState() == 0 && peopleNeedUp > 0) {
+        if (peopleNeedUp > 0 && elevator.getDirection() == Direction.UP
+                || elevator.getDirection() == Direction.WAITING
+                && peopleNeedUp > 0) {
             for (int j = 0; j < passQuantity; j++) {
                 if (arr[getCurrentFloor() - 1][j] >= getCurrentFloor() && arr[getCurrentFloor() - 1][j] > 0) {
                     tempUp[j] = arr[getCurrentFloor() - 1][j];
@@ -158,7 +163,9 @@ public class Dispatcher {
                 elevator.setCurrentCapacity(elevator.getCurrentCapacity() + peopleNeedUp);
             }
 
-        } else if (peopleNeedDown > 0 && elevator.getState() == -1 || elevator.getState() == 0 && peopleNeedDown > 0) {
+        } else if (peopleNeedDown > 0 && elevator.getDirection() == Direction.DOWN
+                || elevator.getDirection() == Direction.WAITING
+                && peopleNeedDown > 0) {
             for (int j = 0; j < passQuantity; j++) {
                 if (arr[getCurrentFloor() - 1][j] < getCurrentFloor() && arr[getCurrentFloor() - 1][j] > 0) {
                     tempDown[j] = arr[getCurrentFloor() - 1][j];
@@ -231,7 +238,7 @@ public class Dispatcher {
         getFreePlace();
 
         // if elevator is moving up
-        if (elevator.getState() == 1) {
+        if (elevator.getDirection() == Direction.UP) {
             if (freePlace == 0) {
                 setCurrentFloor(min);
             } else {
@@ -249,7 +256,7 @@ public class Dispatcher {
                                 nextFloor = k;
                                 break;
                             } else {
-                                elevator.setState(-1);
+                                elevator.setDirection(Direction.DOWN);
                             }
                         }
                     }
@@ -257,7 +264,7 @@ public class Dispatcher {
                 setCurrentFloor(nextFloor);
             }
             // if elevator is moving down
-        } else if (elevator.getState() == -1) {
+        } else if (elevator.getDirection() == Direction.DOWN) {
             if (freePlace == 0) {
                 setCurrentFloor(max);
             } else {
@@ -275,7 +282,7 @@ public class Dispatcher {
                                 nextFloor = i;
                                 break;
                             } else {
-                                elevator.setState(1);
+                                elevator.setDirection(Direction.UP);
                                 nextFloor = 1;
                             }
                         }
@@ -297,7 +304,7 @@ public class Dispatcher {
         elevator.setCurrentCapacity(elevator.getCurrentCapacity() - count);
     }
 
-    public static int getZeros(int[][] numbers) {
+    public int getZeros(int[][] numbers) {
         int count = 0;
         for (int[] number : numbers) {
             for (int i : number) {
@@ -313,7 +320,7 @@ public class Dispatcher {
         return floorQuantity;
     }
 
-    public static int[] reverseSort(int[] a) {
+    public int[] reverseSort(int[] a) {
         a = Arrays.stream(a).boxed()
                 .sorted(Collections.reverseOrder())
                 .mapToInt(Integer::intValue)
@@ -326,10 +333,10 @@ public class Dispatcher {
     }
 
     public boolean getButton(int floor) {
-        if (getPeopleNeedUp(floor) > 0 && elevator.getState() == 1 ||
+        if (getPeopleNeedUp(floor) > 0 && elevator.getDirection() == Direction.UP ||
                 this.getCurrentFloor() == 1) {
             setButton(true);
-        } else if (getPeopleNeedDown(floor) > 0 && elevator.getState() == 2 ||
+        } else if (getPeopleNeedDown(floor) > 0 && elevator.getDirection() == Direction.DOWN ||
                 this.getCurrentFloor() == getFloorQuantity()) {
             setButton(false);
         }

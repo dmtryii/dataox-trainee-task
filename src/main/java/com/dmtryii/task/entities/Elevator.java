@@ -1,12 +1,14 @@
 package com.dmtryii.task.entities;
 
+import com.dmtryii.task.enums.Direction;
+
 import java.util.Arrays;
 
 public class Elevator {
     private static final int MAX_CAPACITY = 5;
-    private int state = 0; // up = 1, waiting = 0, down = -1
     private int currentCapacity;
     private final int[] comingPeople;
+    private Direction direction;
 
     public Elevator() {
         this.comingPeople = new int[MAX_CAPACITY];
@@ -30,8 +32,8 @@ public class Elevator {
         return this.comingPeople;
     }
 
-    public int getState() {
-        return this.state;
+    public Direction getDirection() {
+        return this.direction;
     }
 
     public int getMaxCapacity() {
@@ -42,7 +44,7 @@ public class Elevator {
         this.currentCapacity = currentCapacity;
     }
 
-    public void setState(int state) {
-        this.state = state;
+    public void setDirection(Direction direction) {
+        this.direction = direction;
     }
 }
